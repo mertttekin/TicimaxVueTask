@@ -55,50 +55,47 @@ export default {
         ...mapActions(["fetchProducts"]),
         updateSort() {
             this.$store.commit("SET_SORT", this.sortType);
-
-            this.$router.push({ query: { ...this.$route.query, sort: this.$store.state.sortType } });
-
         },
         nextPage() {
             this.$store.commit("SET_PAGE", this.currentPage + 1);
-
             this.$router.push({ query: { ...this.$route.query, page: this.$store.state.currentPage } });
 
         },
         prevPage() {
             if (this.currentPage > 1) {
                 this.$store.commit("SET_PAGE", this.currentPage - 1);
-
                 this.$router.push({ query: { ...this.$route.query, page: this.$store.state.currentPage } });
             }
         },
     },
     watch: {
-
         '$route.query.page': function () {
             this.fetchProducts();
-
-        },
-
+        }
     },
     created() {
         const sortTypes = ["asc", "desc"];
         const query = this.$route.query;
 
-        if (!query.sort || !query.page) {
+        const queryPageAsNumber = Number(query.page);
+        const sortType = sortTypes.includes(query.sort) ? query.sort : this.$store.state.sortType;
+        const page = queryPageAsNumber && queryPageAsNumber > 0 ? queryPageAsNumber : this.$store.state.currentPage;
+
+        if (sortType !== query.sort || page !== queryPageAsNumber) {
             this.$router.replace({
                 query: {
-                    page: Number(query.page) || this.$store.state.currentPage,
-                    sort: query.sort || this.$store.state.sortType
+                    page,
+                    sort: sortType
                 }
-            });
-        } else {
-            if (query.sort !== this.$store.state.sortType) {
-                this.$store.commit("SET_SORT", sortTypes.includes(query.sort) ? query.sort : this.$store.state.sortType);
-            }
-            if (query.page !== this.$store.state.currentPage) {
-                this.$store.commit("SET_PAGE", Number(query.page));
-            }
+            })
+        }
+
+        if (sortType !== this.$store.state.sortType) {
+            this.$store.commit("SET_SORT", sortType);
+        }
+
+        if (page !== this.$store.state.currentPage) {
+            this.$store.commit("SET_PAGE", page);
         }
 
         this.fetchProducts();
