@@ -4,14 +4,14 @@
 
         <div>
             <label>Sırala: </label>
-            <select id="sort" v-model="sortType" @change="updateSort">
+            <select v-model="productStore.filter.sortType" @change="updateSortType">
                 <option value="asc">Fiyata Göre Artan</option>
                 <option value="desc">Fiyata Göre Azalan</option>
             </select>
         </div>
 
-        <div id="loading" v-if="loading">Yükleniyor...</div>
-        <div v-else-if="error">{{ error }}</div>
+        <div id="loading" v-if="productStore.loading">Yükleniyor...</div>
+        <div v-else-if="productStore.error">{{ productStore.error }}</div>
         <table v-else>
             <thead>
                 <tr>
@@ -20,7 +20,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="product in sortedProducts" :key="product.id">
+                <tr v-for="product in productStore.sortedProducts" :key="product.id">
                     <td>{{ product.title }}</td>
                     <td>{{ product.price }}₺</td>
                 </tr>
@@ -28,81 +28,76 @@
         </table>
 
         <div class="pagination">
-            <button @click="prevPage" :disabled="currentPage === 1">Önceki</button>
-            <span>Sayfa {{ currentPage }}</span>
+            <button @click="prevPage" :disabled="productStore.filter.page === 1">Önceki</button>
+            <span>Sayfa {{ productStore.filter.page }}</span>
             <button @click="nextPage">Sonraki</button>
         </div>
     </div>
 </template>
 
-<script>
-import { mapState, mapActions, mapGetters } from "vuex";
+<script setup>
+import { useRouter, useRoute } from 'vue-router';
+import { useProductStore } from "@/store";
+import { onMounted,watch } from "vue";
 
-export default {
-    computed: {
-        ...mapState(["loading", "error", "currentPage", "sortType"]),
-        ...mapGetters(["sortedProducts"]),
-        sortType: {
-            get() {
-                return this.$store.state.sortType;
-            },
-            set(value) {
-                this.$store.commit("SET_SORT", value);
-            },
-        },
-    },
-    methods: {
-        ...mapActions(["fetchProducts"]),
-        updateSort() {
-            this.$store.commit("SET_SORT", this.sortType);
-        },
-        nextPage() {
-            this.$store.commit("SET_PAGE", this.currentPage + 1);
-            this.$router.push({ query: { ...this.$route.query, page: this.$store.state.currentPage } });
 
-        },
-        prevPage() {
-            if (this.currentPage > 1) {
-                this.$store.commit("SET_PAGE", this.currentPage - 1);
-                this.$router.push({ query: { ...this.$route.query, page: this.$store.state.currentPage } });
-            }
-        },
-    },
-    watch: {
-        '$route.query.page': function () {
-            this.fetchProducts();
-        }
-    },
-    created() {
-        const sortTypes = ["asc", "desc"];
-        const query = this.$route.query;
+const router = useRouter();
+const route = useRoute();
+// Accessing Pinia store
+const productStore = useProductStore();
+onMounted(() => {
+    const sortTypes = ["asc", "desc"];
+        const {query} = route;
 
         const queryPageAsNumber = Number(query.page);
-        const sortType = sortTypes.includes(query.sort) ? query.sort : this.$store.state.sortType;
-        const page = queryPageAsNumber && queryPageAsNumber > 0 ? queryPageAsNumber : this.$store.state.currentPage;
+        const sortType = sortTypes.includes(query.sort) ? query.sort :productStore.filter.sortType;
+        const page = queryPageAsNumber && queryPageAsNumber > 0 ? queryPageAsNumber : productStore.filter.page;
+
+        if (sortType !== productStore.filter.sortType) {
+           productStore.setSortType(sortType)
+        }
+
+        if (page !== productStore.filter.page) {
+            productStore.setPage(page)
+        }
 
         if (sortType !== query.sort || page !== queryPageAsNumber) {
-            this.$router.replace({
+            router.replace({
                 query: {
                     page,
                     sort: sortType
                 }
             })
         }
+        
+        productStore.fetchProducts();
 
-        if (sortType !== this.$store.state.sortType) {
-            this.$store.commit("SET_SORT", sortType);
-        }
+      
 
-        if (page !== this.$store.state.currentPage) {
-            this.$store.commit("SET_PAGE", page);
-        }
+});
 
-        this.fetchProducts();
-    },
+watch(() => route.query.page, ()=>{
+    productStore.fetchProducts();
+})
 
+watch(() => productStore.filter, ({page,sortType}) => {
+    router.push({ query: { ...route.query, page, sort:sortType } });
+})
 
-};
+const updateSortType = (event) =>{
+    productStore.setSortType(event.target.value)
+}
+
+const nextPage = () => {
+    productStore.setPage(productStore.filter.page + 1);
+    // updateRouteWithPage();
+}
+const prevPage = () => {
+    if (!productStore.filter.page <= 1)
+        productStore.setPage(productStore.filter.page - 1);
+        // updateRouteWithPage();
+}
+
 </script>
 
 <style scoped>

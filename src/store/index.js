@@ -1,59 +1,51 @@
-import Vue from "vue";
-import Vuex from "vuex";
-import axios from "axios";
+// src/store/index.js
+import { defineStore } from 'pinia';
+import axios from 'axios';
 
-Vue.use(Vuex);
-
-
-export default new Vuex.Store({
-  state: {
+export const useProductStore = defineStore('product', {
+  state: () => ({
     products: [],
     loading: false,
     error: null,
-    currentPage: 1,
-    sortType: "asc",
-  },
-  mutations: {
-    SET_PRODUCTS(state, products) {
-      state.products = products;
-    },
-    SET_LOADING(state, loading) {
-      state.loading = loading;
-    },
-    SET_ERROR(state, error) {
-      state.error = error;
-    },
-    SET_PAGE(state, page) {
-      state.currentPage = page;
-    },
-    SET_SORT(state, sortType) {
-        state.sortType = sortType;
-    },
-  },
+    filter: {
+      page: 1,
+      sortType: 'asc',
+    }
+  }),
+
   actions: {
-    async fetchProducts({ commit, state }) {
-      commit("SET_LOADING", true);
+    async fetchProducts() {
+      this.loading = true;
       try {
         const limit = 10;
-        const skip = (state.currentPage - 1) * limit;
+        const skip = (this.filter.page - 1) * limit;
         const response = await axios.get(
           `https://dummyjson.com/products?limit=${limit}&skip=${skip}`
         );
-        commit("SET_PRODUCTS", response.data.products);
+        this.products = response.data.products;
       } catch (error) {
-        commit("SET_ERROR", "Ürünler yüklenirken hata oluştu!");
+        this.error = 'Ürünler yüklenirken hata oluştu!';
       } finally {
-        commit("SET_LOADING", false);
+        this.loading = false;
       }
     },
+
+    setPage(page) {
+      this.filter = {...this.filter, page}
+    },
+
+    setSortType(sortType) {
+      this.filter = {...this.filter, sortType};
+    },
   },
+
+  
+
   getters: {
     sortedProducts(state) {
-      return state.products
-        .slice()
-        .sort((a, b) =>
-          state.sortType === "asc" ? a.price - b.price : b.price - a.price
-        );
+      return state.products.slice().sort((a, b) =>
+        state.filter.sortType === 'asc' ? a.price - b.price : b.price - a.price
+      );
     },
   },
 });

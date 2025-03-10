@@ -6,7 +6,15 @@
 </template>
 
 <script>
+import { defineComponent } from 'vue';
 
+export default defineComponent({
+  name: 'App',
+  setup() {
+    // Burada app ile ilgili reaktif veri veya metodlar eklenebilir
+    return {};
+  },
+});
 </script>
 
 <style>
