@@ -1,23 +1,22 @@
 <template>
-  <div id="app">
+  <div>
     <img alt="Vue logo" src="./assets/logo.png">
     <router-view />
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'App',
   setup() {
-    // Burada app ile ilgili reaktif veri veya metodlar eklenebilir
     return {};
   },
 });
 </script>
 
-<style>
+<style lang="scss">
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -25,10 +24,5 @@ export default defineComponent({
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
-}
-
-router-view {
-  display: block;
-  min-height: 100px;
 }
 </style>

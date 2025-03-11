@@ -1,9 +1,11 @@
 // src/store/index.js
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import type { State } from '@/types';
+
 
 export const useProductStore = defineStore('product', {
-  state: () => ({
+  state: ():State => ({
     products: [],
     loading: false,
     error: null,
@@ -30,12 +32,12 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    setPage(page) {
-      this.filter = {...this.filter, page}
+    setPage(page:State['filter']['page']) {
+      this.filter.page = page
     },
 
-    setSortType(sortType) {
-      this.filter = {...this.filter, sortType};
+    setSortType(sortType:State['filter']['sortType']) {
+      this.filter.sortType = sortType
     },
   },
 

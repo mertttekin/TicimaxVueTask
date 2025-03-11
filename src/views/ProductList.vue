@@ -5,8 +5,7 @@
         <div>
             <label>Sırala: </label>
             <select v-model="productStore.filter.sortType" @change="updateSortType">
-                <option value="asc">Fiyata Göre Artan</option>
-                <option value="desc">Fiyata Göre Azalan</option>
+                <option v-for="type in sortTypes" :value=type :key=type>{{ sortData[type] }}</option>
             </select>
         </div>
 
@@ -35,68 +34,70 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
 import { useProductStore } from "@/store";
-import { onMounted,watch } from "vue";
+import { onMounted, watch } from "vue";
+import type { SortType } from '@/types';
 
 
 const router = useRouter();
 const route = useRoute();
-// Accessing Pinia store
 const productStore = useProductStore();
+const sortTypes:SortType[] = ["asc", "desc"];
+const sortData: Record<SortType, string> = {
+    asc: 'Fiyata Göre Artan',
+    desc : 'Fiyata Göre Azalan'
+}
+
 onMounted(() => {
-    const sortTypes = ["asc", "desc"];
-        const {query} = route;
+    const { query } = route;
 
-        const queryPageAsNumber = Number(query.page);
-        const sortType = sortTypes.includes(query.sort) ? query.sort :productStore.filter.sortType;
-        const page = queryPageAsNumber && queryPageAsNumber > 0 ? queryPageAsNumber : productStore.filter.page;
+    const queryPageAsNumber = Number(query.page);
+    const sortType = query.sort && sortTypes.includes(query.sort.toString() as SortType) ? query.sort as SortType : productStore.filter.sortType;
+    const page = queryPageAsNumber && queryPageAsNumber > 0 ? queryPageAsNumber : productStore.filter.page;
 
-        if (sortType !== productStore.filter.sortType) {
-           productStore.setSortType(sortType)
-        }
+    if (sortType !== productStore.filter.sortType) {
+        productStore.setSortType(sortType);
+    }
 
-        if (page !== productStore.filter.page) {
-            productStore.setPage(page)
-        }
+    if (page !== productStore.filter.page) {
+        productStore.setPage(page);
+    }
 
-        if (sortType !== query.sort || page !== queryPageAsNumber) {
-            router.replace({
-                query: {
-                    page,
-                    sort: sortType
-                }
-            })
-        }
-        
-        productStore.fetchProducts();
+    if (sortType !== query.sort || page !== queryPageAsNumber) {
+        router.replace({
+            query: {
+                page,
+                sort: sortType
+            }
+        })
+    }
 
-      
-
+    productStore.fetchProducts();
 });
 
-watch(() => route.query.page, ()=>{
+watch(() => route.query.page, () => {
     productStore.fetchProducts();
 })
 
-watch(() => productStore.filter, ({page,sortType}) => {
-    router.push({ query: { ...route.query, page, sort:sortType } });
-})
-
-const updateSortType = (event) =>{
-    productStore.setSortType(event.target.value)
-}
+watch(productStore.filter, ({ page, sortType }) => {
+    router.push({ query: { ...route.query, page, sort: sortType } });
+},{deep:true})
 
 const nextPage = () => {
     productStore.setPage(productStore.filter.page + 1);
-    // updateRouteWithPage();
 }
 const prevPage = () => {
-    if (!productStore.filter.page <= 1)
+    if (!(productStore.filter.page <= 1))
         productStore.setPage(productStore.filter.page - 1);
-        // updateRouteWithPage();
 }
+const updateSortType = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    
+    productStore.setSortType(target.value as SortType);
+};
+
 
 </script>
 
